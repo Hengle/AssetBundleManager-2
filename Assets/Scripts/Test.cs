@@ -16,11 +16,12 @@ public class Test : MonoBehaviour
 	void Update () {
 	    if (Input.GetKeyUp(KeyCode.Space))
 	    {
-            loader.GetAssetBundleObject("monkey", "monkey", OnLoadedObject);
+            //loader.GetAssetBundleObject("assetbundle", "monkey", OnLoadedObject);
+            ResourceMgr.Instance.AddLoadAssetObject("art/assetbundle","monkey", OnLoadedObject);
         }
 	}
 
-    private void OnLoadedObject(GameObject prefab)
+    private void OnLoadedObject(Object prefab)
     {
         var go = Instantiate(prefab);
     }
