@@ -65,7 +65,7 @@ public class AssetBundleLoader : MonoBehaviour
 
         // Get the asset.
         GameObject prefab = request.GetAsset<GameObject>();
-        ResetShader(prefab);
+        RemapShader(prefab);
 
         // Calculate and display the elapsed time.
         float elapsedTime = Time.realtimeSinceStartup - startTime;
@@ -78,7 +78,7 @@ public class AssetBundleLoader : MonoBehaviour
     /// 因为有时候从ab得到的材质会丢shader，所以在从ab里拿出任何asset后都进行一下所包含材质的shader重新链接
     /// </summary>
     /// <param name="obj"></param>
-    public static void ResetShader(UnityEngine.Object obj)
+    public static void RemapShader(UnityEngine.Object obj)
 
     {
 

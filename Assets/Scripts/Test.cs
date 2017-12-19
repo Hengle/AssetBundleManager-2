@@ -17,7 +17,6 @@ public class Test : MonoBehaviour
 	    if (Input.GetKeyUp(KeyCode.Space))
 	    {
             loader.GetAssetBundleObject("monkey", "monkey", OnLoadedObject);
-
         }
 	}
 
