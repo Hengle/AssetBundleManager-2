@@ -2,23 +2,38 @@
 using System.Collections.Generic;
 using AssetBundles;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Test : MonoBehaviour
 {
     public AssetBundleLoader loader;
+    public Text LogText;
 
 	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	    if (Input.GetKeyUp(KeyCode.Space))
+	void Awake ()
+	{
+	    Application.logMessageReceived += (condition, trace, type) =>
 	    {
-            //loader.GetAssetBundleObject("assetbundle", "monkey", OnLoadedObject);
-            ResourceMgr.Instance.AddLoadAssetObject("art/assetbundle","monkey", OnLoadedObject);
+	        LogText.text = condition + "\n" + LogText.text;
+	    };
+
+        loader.Init((() => Debug.Log("AssetBundle Init Done")));
+	}
+
+    public void ChechNewVersion()
+    {
+        bool hasNewVersion = loader.IsBundleHaveNewVeresion("spine");
+        Debug.Log("新版本 : " + hasNewVersion);
+        if (hasNewVersion)
+        {
+            loader.GetFileDownloadSize("cube", response => Debug.Log("文件大小："+response));
         }
+        
+    }
+
+	// Update is called once per frame
+	public void GetObjectFromAB () {
+        loader.GetAssetBundleObject("spine", "SpineTest", OnLoadedObject);
 	}
 
     private void OnLoadedObject(Object prefab)

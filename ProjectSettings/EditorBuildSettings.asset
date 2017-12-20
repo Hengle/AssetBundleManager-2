@@ -5,6 +5,5 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/AGABSample/TestScene.unity
-    guid: 0e66f98161eefd849bad0b07ad9cf7e6
