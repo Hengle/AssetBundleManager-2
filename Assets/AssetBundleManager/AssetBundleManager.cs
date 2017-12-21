@@ -43,7 +43,10 @@ namespace AssetBundles
 		static LogMode m_LogMode = LogMode.All;
 		static string m_BaseDownloadingURL = "";
 		static string[] m_ActiveVariants =  {  };
-		static AssetBundleManifest m_AssetBundleManifest = null;
+
+        public static AssetBundleManifest AssetBundleManifest => m_AssetBundleManifest;
+	    static AssetBundleManifest m_AssetBundleManifest = null;
+
 	#if UNITY_EDITOR	
 		static int m_SimulateAssetBundleInEditor = -1;
 		const string kSimulateAssetBundles = "SimulateAssetBundles";
@@ -318,21 +321,6 @@ namespace AssetBundles
 	
 			return false;
 		}
-
-        /// <summary>
-        /// 获取在manifest中的指定bundle的版本，也就是最新版本号
-        /// </summary>
-        /// <param name="assetBundleName"></param>
-        /// <returns></returns>
-	    public static Hash128 GetAssetBundleHash(string assetBundleName)
-	    {
-            if (m_AssetBundleManifest == null)
-            {
-                Debug.LogError("Please initialize AssetBundleManifest by calling AssetBundleManager.Initialize()");
-                return new Hash128();
-            }
-            return m_AssetBundleManifest.GetAssetBundleHash(assetBundleName);
-	    }
 
 		// Where we get all the dependencies and load them all.
 		static protected void LoadDependencies(string assetBundleName)

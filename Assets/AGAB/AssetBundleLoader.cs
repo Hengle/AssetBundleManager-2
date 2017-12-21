@@ -23,7 +23,22 @@ public class AssetBundleLoader : MonoBehaviour
     /// <returns></returns>
     public bool IsBundleHaveNewVeresion(string assetBundleName)
     {
-        return !Caching.IsVersionCached(assetBundleName, AssetBundleManager.GetAssetBundleHash(assetBundleName));
+        return !Caching.IsVersionCached(assetBundleName, GetAssetBundleHash(assetBundleName));
+    }
+
+    /// <summary>
+    /// 获取在manifest中的指定bundle的版本，也就是最新版本号
+    /// </summary>
+    /// <param name="assetBundleName"></param>
+    /// <returns></returns>
+    public static Hash128 GetAssetBundleHash(string assetBundleName)
+    {
+        if (AssetBundleManager.AssetBundleManifest == null)
+        {
+            Debug.LogError("Please initialize AssetBundleManifest by calling AssetBundleManager.Initialize()");
+            return new Hash128();
+        }
+        return AssetBundleManager.AssetBundleManifest.GetAssetBundleHash(assetBundleName);
     }
 
     public void GetFileDownloadSize(string assetBundleName, Action<string> callback)
@@ -36,7 +51,6 @@ public class AssetBundleLoader : MonoBehaviour
     {
         UnityWebRequest www = UnityWebRequest.Get(address);
         yield return www.Send();
-
         if (www.isError)
         {
             Debug.Log(www.error);
