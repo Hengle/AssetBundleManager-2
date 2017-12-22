@@ -26,7 +26,7 @@ public class Test : MonoBehaviour
         Debug.Log("新版本 : " + hasNewVersion);
         if (hasNewVersion)
         {
-            loader.GetFileDownloadSize("cube" +
+            loader.GetFileDownloadSize("spine" +
                 "", response => Debug.Log("文件大小："+response));
         }
         

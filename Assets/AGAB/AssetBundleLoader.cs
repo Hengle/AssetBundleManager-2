@@ -17,13 +17,28 @@ public class AssetBundleLoader : MonoBehaviour
     }
 
     /// <summary>
-    /// 指定asset bundle是否已有更新的版本
+    /// 指定asset bundle是否已有更新的版本，注意如果所依赖的包有更新，也会反馈true
     /// </summary>
     /// <param name="assetBundleName"></param>
     /// <returns></returns>
     public bool IsBundleHaveNewVeresion(string assetBundleName)
     {
-        return !Caching.IsVersionCached(assetBundleName, GetAssetBundleHash(assetBundleName));
+        if (!Caching.IsVersionCached(assetBundleName, GetAssetBundleHash(assetBundleName)))
+        {
+            return true;
+        }
+
+        //询问依赖包的缓存情况
+        string[] dependencies = GetDependencies(assetBundleName);
+        for (int i = 0; i < dependencies.Length; i++)
+        {
+            if (!Caching.IsVersionCached(dependencies[i], GetAssetBundleHash(dependencies[i])))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -33,22 +48,50 @@ public class AssetBundleLoader : MonoBehaviour
     /// <returns></returns>
     public static Hash128 GetAssetBundleHash(string assetBundleName)
     {
-        if (AssetBundleManager.AssetBundleManifest == null)
+        if (AssetBundleManager.AssetBundleManifestObject == null)
         {
             Debug.LogError("Please initialize AssetBundleManifest by calling AssetBundleManager.Initialize()");
             return new Hash128();
         }
-        return AssetBundleManager.AssetBundleManifest.GetAssetBundleHash(assetBundleName);
+        return AssetBundleManager.AssetBundleManifestObject.GetAssetBundleHash(assetBundleName);
     }
 
-    public void GetFileDownloadSize(string assetBundleName, Action<string> callback)
+    /// <summary>
+    /// 获取一个bundle的所有依赖包名
+    /// </summary>
+    /// <param name="assetBundleName"></param>
+    /// <returns></returns>
+    public static string[] GetDependencies(string assetBundleName)
     {
+        return AssetBundleManager.AssetBundleManifestObject.GetAllDependencies(assetBundleName);
+    }
+
+    /// <summary>
+    /// 包含所有依赖包的需下载大小
+    /// </summary>
+    /// <param name="assetBundleName"></param>
+    /// <param name="callback"></param>
+    public void GetFileDownloadSize(string assetBundleName, Action<int> callback)
+    {
+        StartCoroutine(GetFileAndDependenciesSize(assetBundleName, callback));
+    }
+
+    private IEnumerator GetFileAndDependenciesSize(string assetBundleName, Action<int> callback)
+    {
+        int fileSize = 0;
+        yield return StartCoroutine(GetFileSize(assetBundleName, txtSize => fileSize += int.Parse(txtSize)));
+        //询问依赖包
+        string[] dependencies = GetDependencies(assetBundleName);
+        for (int i = 0; i < dependencies.Length; i++)
+        {
+            yield return StartCoroutine(GetFileSize(dependencies[i], txtSize => fileSize += int.Parse(txtSize)));
+        }
+        callback(fileSize);
+    }
+
+    private IEnumerator GetFileSize(string assetBundleName, Action<string> callback)
+    {   
         string address = AssetBundleManager.BaseDownloadingURL + assetBundleName;
-        StartCoroutine(GetFileSize(address, callback));
-    }
-
-    private IEnumerator GetFileSize(string address, Action<string> callback)
-    {
         UnityWebRequest www = UnityWebRequest.Get(address);
         yield return www.Send();
         if (www.isError)

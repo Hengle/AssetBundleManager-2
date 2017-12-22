@@ -44,7 +44,6 @@ namespace AssetBundles
 		static string m_BaseDownloadingURL = "";
 		static string[] m_ActiveVariants =  {  };
 
-        public static AssetBundleManifest AssetBundleManifest => m_AssetBundleManifest;
 	    static AssetBundleManifest m_AssetBundleManifest = null;
 
 	#if UNITY_EDITOR	
@@ -81,7 +80,8 @@ namespace AssetBundles
 		// AssetBundleManifest object which can be used to load the dependecies and check suitable assetBundle variants.
 		public static AssetBundleManifest AssetBundleManifestObject
 		{
-			set {m_AssetBundleManifest = value; }
+            get { return m_AssetBundleManifest; }
+            set {m_AssetBundleManifest = value; }
 		}
 	
 		private static void Log(LogType logType, string text)
