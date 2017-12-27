@@ -1,0 +1,10 @@
+ManifestFileVersion: 0
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: spine
+      Dependencies:
+        Dependency_0: spine_assets
+    Info_1:
+      Name: spine_assets
+      Dependencies: {}

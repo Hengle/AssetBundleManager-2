@@ -91,10 +91,20 @@ namespace AssetBundles
 			else if (m_LogMode == LogMode.All)
 				Debug.Log("[AssetBundleManager] " + text);
 		}
-	
-	#if UNITY_EDITOR
-		// Flag to indicate if we want to simulate assetBundles in Editor without building them actually.
-		public static bool SimulateAssetBundleInEditor 
+
+	    public static Dictionary<string, WWW> DownloadingWWWs
+	    {
+	        get { return m_DownloadingWWWs; }
+	    }
+
+        public static Dictionary<string, string> DownloadingErrors
+        {
+            get { return m_DownloadingErrors; }
+        }
+
+#if UNITY_EDITOR
+        // Flag to indicate if we want to simulate assetBundles in Editor without building them actually.
+        public static bool SimulateAssetBundleInEditor 
 		{
 			get
 			{

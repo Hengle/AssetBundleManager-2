@@ -146,6 +146,8 @@ namespace AssetBundles
 		protected string 				m_DownloadingError;
 		protected System.Type 			m_Type;
 		protected AssetBundleRequest	m_Request = null;
+
+        public string DownloadingError { get { return m_DownloadingError; } }
 	
 		public AssetBundleLoadAssetOperationFull (string bundleName, string assetName, System.Type type)
 		{

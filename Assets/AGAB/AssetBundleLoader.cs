@@ -8,12 +8,25 @@ using UnityEngine.Experimental.Networking;
 
 public class AssetBundleLoader : MonoBehaviour
 {
+    /// <summary>
+    /// 是否使用本地服务器debug
+    /// </summary>
+    public bool IsLocalServerDebug;
+    /// <summary>
+    /// 是使用远程服务器下载AB，还是使用本地包内AB
+    /// </summary>
+    public bool IsFromRemoteServer;
 
-    public static string Base_Address = "http://124.254.60.82:10005/AssetBundles/";
+    public string Base_Address = "http://124.254.60.82:10005/AssetBundles/Samples/";
 
-    public void GetAssetBundleObject(string assetBundleName, string assetName, Action<GameObject> callback)
+    private Action<float> _progressNotifier;
+    private Action<string> _onFailed;
+    private bool _isDownloading = false;
+
+    public void GetAssetBundleObject(string assetBundleName, string assetName,
+        Action<float> progressNotifier, Action<string> onFailed, Action<GameObject> onSuccess)
     {
-        StartCoroutine(GetObject(assetBundleName, assetName, callback));
+        StartCoroutine(GetObject(assetBundleName, assetName, progressNotifier, onFailed, onSuccess));
     }
 
     /// <summary>
@@ -46,7 +59,7 @@ public class AssetBundleLoader : MonoBehaviour
     /// </summary>
     /// <param name="assetBundleName"></param>
     /// <returns></returns>
-    public static Hash128 GetAssetBundleHash(string assetBundleName)
+    public Hash128 GetAssetBundleHash(string assetBundleName)
     {
         if (AssetBundleManager.AssetBundleManifestObject == null)
         {
@@ -61,7 +74,7 @@ public class AssetBundleLoader : MonoBehaviour
     /// </summary>
     /// <param name="assetBundleName"></param>
     /// <returns></returns>
-    public static string[] GetDependencies(string assetBundleName)
+    public string[] GetDependencies(string assetBundleName)
     {
         return AssetBundleManager.AssetBundleManifestObject.GetAllDependencies(assetBundleName);
     }
@@ -87,6 +100,25 @@ public class AssetBundleLoader : MonoBehaviour
             yield return StartCoroutine(GetFileSize(dependencies[i], txtSize => fileSize += int.Parse(txtSize)));
         }
         callback(fileSize);
+    }
+    
+    /// <summary>
+    /// 获取当前下载进度，0-1
+    /// </summary>
+    /// <returns></returns>
+    public float GetDownloadingProgress()
+    {
+        //所有下载项的综合下载进度
+        var downloads = AssetBundleManager.DownloadingWWWs;
+        int downloadCount = downloads.Count;
+        if (downloadCount == 0) return 1;
+
+        float allProgress = 0;
+        foreach (var download in downloads)
+        {
+            allProgress += download.Value.progress;
+        }
+        return allProgress / downloadCount;
     }
 
     private IEnumerator GetFileSize(string assetBundleName, Action<string> callback)
@@ -114,10 +146,11 @@ public class AssetBundleLoader : MonoBehaviour
     }
 
     // Use this for initialization
-    private IEnumerator GetObject(string assetBundleName, string assetName, Action<GameObject> callback)
+    private IEnumerator GetObject(string assetBundleName, string assetName,
+        Action<float> progressNotifier, Action<string> onFailed, Action<GameObject> onSuccess)
     {
         // Load asset.
-        yield return StartCoroutine(InstantiateGameObjectAsync(assetBundleName, assetName, callback));
+        yield return StartCoroutine(InstantiateGameObjectAsync(assetBundleName, assetName, progressNotifier, onFailed, onSuccess));
     }
 
     // Initialize the downloading url and AssetBundleManifest object.
@@ -126,17 +159,21 @@ public class AssetBundleLoader : MonoBehaviour
         // Don't destroy this gameObject as we depend on it to run the loading script.
         DontDestroyOnLoad(gameObject);
 
-        // With this code, when in-editor or using a development builds: Always use the AssetBundle Server
-        // (This is very dependent on the production workflow of the project. 
-        // 	Another approach would be to make this configurable in the standalone player.)
-#if UNITY_EDITOR
-        AssetBundleManager.SetDevelopmentAssetBundleServer();
-#else
-		// Use the following code if AssetBundles are embedded in the project for example via StreamingAssets folder etc:
-		//AssetBundleManager.SetSourceAssetBundleURL(Application.dataPath + "/");
-		// Or customize the URL based on your deployment or configuration
-		AssetBundleManager.SetSourceAssetBundleURL(Base_Address);
-#endif
+        if (IsLocalServerDebug)
+        {
+            AssetBundleManager.SetDevelopmentAssetBundleServer();
+        }
+        else
+        {
+            if (IsFromRemoteServer)
+            {
+                AssetBundleManager.SetSourceAssetBundleURL(Base_Address);
+            }
+            else
+            {
+                AssetBundleManager.SetSourceAssetBundleURL(Application.dataPath + "/");
+            }
+        }
 
         // Initialize AssetBundleManifest which loads the AssetBundleManifest object.
         var request = AssetBundleManager.Initialize();
@@ -149,7 +186,8 @@ public class AssetBundleLoader : MonoBehaviour
         }
     }
 
-    protected IEnumerator InstantiateGameObjectAsync(string assetBundleName, string assetName, Action<GameObject> _callback)
+    protected IEnumerator InstantiateGameObjectAsync(string assetBundleName, string assetName,
+        Action<float> progressNotifier, Action<string> onFailed, Action<GameObject> onSuccess)
     {
         // This is simply to get the elapsed time for this phase of AssetLoading.
         float startTime = Time.realtimeSinceStartup;
@@ -158,8 +196,23 @@ public class AssetBundleLoader : MonoBehaviour
         AssetBundleLoadAssetOperation request = AssetBundleManager.LoadAssetAsync(assetBundleName, assetName, typeof(GameObject));
         if (request == null)
             yield break;
+        _progressNotifier = progressNotifier;
+        _onFailed = onFailed;
+        _isDownloading = true;
         yield return StartCoroutine(request);
+        _isDownloading = false;
 
+        if (request is AssetBundleLoadAssetOperationFull)
+        {
+            //Full表示是正式环境下进行的加载，在这种情况下，如果有出错，要把错误输出提交出去
+            var requestFull = (AssetBundleLoadAssetOperationFull) request;
+            if (!string.IsNullOrEmpty(requestFull.DownloadingError) && onFailed != null)
+            {
+                onFailed(requestFull.DownloadingError);
+                yield break;
+            }
+        }
+        
         // Get the asset.
         GameObject prefab = request.GetAsset<GameObject>();
         RemapShader(prefab);
@@ -168,14 +221,14 @@ public class AssetBundleLoader : MonoBehaviour
         float elapsedTime = Time.realtimeSinceStartup - startTime;
         Debug.Log(assetName + (prefab == null ? " was not" : " was") + " loaded successfully in " + elapsedTime + " seconds");
 
-        _callback(prefab);
+        onSuccess(prefab);
     }
 
     /// <summary>
     /// 因为有时候从ab得到的材质会丢shader，所以在从ab里拿出任何asset后都进行一下所包含材质的shader重新链接
     /// </summary>
     /// <param name="obj"></param>
-    public static void RemapShader(UnityEngine.Object obj)
+    public void RemapShader(UnityEngine.Object obj)
     {
         List<Material> listMat = new List<Material>();
         listMat.Clear();
@@ -211,6 +264,17 @@ public class AssetBundleLoader : MonoBehaviour
             var newShader = Shader.Find(shaderName);
             if (newShader != null)
                 m.shader = newShader;
+        }
+    }
+
+    void Update()
+    {
+        if (_isDownloading)
+        {
+            if (_progressNotifier != null)
+            {
+                _progressNotifier(GetDownloadingProgress());
+            }
         }
     }
 }

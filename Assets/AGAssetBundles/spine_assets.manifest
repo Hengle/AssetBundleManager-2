@@ -1,0 +1,33 @@
+ManifestFileVersion: 0
+CRC: 3831680818
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 8a143fd1734aae184245ee05f1e370d7
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: 86430b8e61684985c583374392dbd20b
+HashAppended: 0
+ClassTypes:
+- Class: 21
+  Script: {instanceID: 0}
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+- Class: 49
+  Script: {instanceID: 0}
+- Class: 114
+  Script: {fileID: 11500000, guid: a6b194f808b1af6499c93410e504af42, type: 3}
+- Class: 114
+  Script: {fileID: 11500000, guid: f1b3b4b945939a54ea0b23d3396115fb, type: 3}
+- Class: 115
+  Script: {instanceID: 0}
+Assets:
+- Assets/Art/Spine/S1_E_1/S1_E_1.skel.bytes
+- Assets/Art/Spine/S1_E_1/S1_E_1.atlas.txt
+- Assets/Art/Spine/S1_E_1/S1_E_1_Atlas.asset
+- Assets/Art/Spine/S1_E_1/S1_E_1.png
+- Assets/Art/Spine/S1_E_1/S1_E_1_Material.mat
+- Assets/Art/Spine/S1_E_1/S1_E_1_SkeletonData.asset
+Dependencies: []

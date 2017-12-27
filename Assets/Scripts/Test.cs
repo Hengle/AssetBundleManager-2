@@ -32,13 +32,22 @@ public class Test : MonoBehaviour
         
     }
 
-	// Update is called once per frame
 	public void GetObjectFromAB () {
-        loader.GetAssetBundleObject("spine", "SpineTest", OnLoadedObject);
+        loader.GetAssetBundleObject("spine", "SpineTest", Progress, OnError, OnSuccess);
 	}
 
-    private void OnLoadedObject(Object prefab)
+    private void OnSuccess(Object prefab)
     {
         var go = Instantiate(prefab);
+    }
+
+    private void OnError(string msg)
+    {
+        Debug.LogError(msg);
+    }
+
+    private void Progress(float progress)
+    {
+        Debug.Log(progress);
     }
 }

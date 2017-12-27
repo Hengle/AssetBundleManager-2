@@ -549,6 +549,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbc6519c23d2738419cde24b55e8be61, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  IsLocalServerDebug: 0
+  IsFromRemoteServer: 1
+  Base_Address: http://124.254.60.82:10005/AssetBundles/Samples/
 --- !u!4 &1099184321
 Transform:
   m_ObjectHideFlags: 0
