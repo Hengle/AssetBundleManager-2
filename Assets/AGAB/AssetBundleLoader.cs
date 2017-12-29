@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using AssetBundles;
 using UniRx;
-using UnityEngine.Experimental.Networking;
+using UnityEngine.Networking;
 
 
 public class AssetBundleLoader : MonoBehaviour
@@ -126,7 +126,7 @@ public class AssetBundleLoader : MonoBehaviour
         string address = AssetBundleManager.BaseDownloadingURL + assetBundleName;
         UnityWebRequest www = UnityWebRequest.Get(address);
         yield return www.Send();
-        if (www.isError)
+        if (www.isNetworkError)
         {
             Debug.Log(www.error);
             if (onError != null)
