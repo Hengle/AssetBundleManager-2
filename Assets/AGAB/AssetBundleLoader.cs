@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using AssetBundles;
+using UniRx;
 using UnityEngine.Experimental.Networking;
 
 
@@ -20,13 +21,12 @@ public class AssetBundleLoader : MonoBehaviour
     public string Base_Address = "http://124.254.60.82:10005/AssetBundles/Samples/";
 
     private Action<float> _progressNotifier;
-    private Action<string> _onFailed;
     private bool _isDownloading = false;
 
-    public void GetAssetBundleObject(string assetBundleName, string assetName,
-        Action<float> progressNotifier, Action<string> onFailed, Action<GameObject> onSuccess)
+    public void GetAssetBundleAsset<T>(string assetBundleName, string assetName,
+        Action<float> progressNotifier, Action<string> onFailed, Action<T> onSuccess) where T : UnityEngine.Object
     {
-        StartCoroutine(GetObject(assetBundleName, assetName, progressNotifier, onFailed, onSuccess));
+        StartCoroutine(GetAsset(assetBundleName, assetName, progressNotifier, onFailed, onSuccess));
     }
 
     /// <summary>
@@ -84,22 +84,22 @@ public class AssetBundleLoader : MonoBehaviour
     /// </summary>
     /// <param name="assetBundleName"></param>
     /// <param name="callback"></param>
-    public void GetFileDownloadSize(string assetBundleName, Action<int> callback)
+    public void GetFileDownloadSize(string assetBundleName, Action<string> onFailed, Action<int> onSuccess)
     {
-        StartCoroutine(GetFileAndDependenciesSize(assetBundleName, callback));
+        StartCoroutine(GetFileAndDependenciesSize(assetBundleName, onFailed, onSuccess));
     }
 
-    private IEnumerator GetFileAndDependenciesSize(string assetBundleName, Action<int> callback)
+    private IEnumerator GetFileAndDependenciesSize(string assetBundleName, Action<string> onFailed , Action<int> onSuccess)
     {
         int fileSize = 0;
-        yield return StartCoroutine(GetFileSize(assetBundleName, txtSize => fileSize += int.Parse(txtSize)));
+        yield return StartCoroutine(GetFileSize(assetBundleName, onFailed, txtSize => fileSize += int.Parse(txtSize)));
         //询问依赖包
         string[] dependencies = GetDependencies(assetBundleName);
         for (int i = 0; i < dependencies.Length; i++)
         {
-            yield return StartCoroutine(GetFileSize(dependencies[i], txtSize => fileSize += int.Parse(txtSize)));
+            yield return StartCoroutine(GetFileSize(dependencies[i], onFailed, txtSize => fileSize += int.Parse(txtSize)));
         }
-        callback(fileSize);
+        onSuccess(fileSize);
     }
     
     /// <summary>
@@ -121,7 +121,7 @@ public class AssetBundleLoader : MonoBehaviour
         return allProgress / downloadCount;
     }
 
-    private IEnumerator GetFileSize(string assetBundleName, Action<string> callback)
+    private IEnumerator GetFileSize(string assetBundleName, Action<string> onError, Action<string> onSuccess)
     {   
         string address = AssetBundleManager.BaseDownloadingURL + assetBundleName;
         UnityWebRequest www = UnityWebRequest.Get(address);
@@ -129,10 +129,14 @@ public class AssetBundleLoader : MonoBehaviour
         if (www.isError)
         {
             Debug.Log(www.error);
+            if (onError != null)
+            {
+                onError(www.error);
+            }
         }
         else
         {
-            callback(www.GetResponseHeader("content-length"));
+            onSuccess(www.GetResponseHeader("content-length"));
         }
     }
 
@@ -146,11 +150,11 @@ public class AssetBundleLoader : MonoBehaviour
     }
 
     // Use this for initialization
-    private IEnumerator GetObject(string assetBundleName, string assetName,
-        Action<float> progressNotifier, Action<string> onFailed, Action<GameObject> onSuccess)
+    private IEnumerator GetAsset<T>(string assetBundleName, string assetName,
+        Action<float> progressNotifier, Action<string> onFailed, Action<T> onSuccess) where T : UnityEngine.Object
     {
         // Load asset.
-        yield return StartCoroutine(InstantiateGameObjectAsync(assetBundleName, assetName, progressNotifier, onFailed, onSuccess));
+        yield return StartCoroutine(InstantiateAssetAsync(assetBundleName, assetName, progressNotifier, onFailed, onSuccess));
     }
 
     // Initialize the downloading url and AssetBundleManifest object.
@@ -186,8 +190,8 @@ public class AssetBundleLoader : MonoBehaviour
         }
     }
 
-    protected IEnumerator InstantiateGameObjectAsync(string assetBundleName, string assetName,
-        Action<float> progressNotifier, Action<string> onFailed, Action<GameObject> onSuccess)
+    protected IEnumerator InstantiateAssetAsync<T>(string assetBundleName, string assetName,
+        Action<float> progressNotifier, Action<string> onFailed, Action<T> onSuccess) where T : UnityEngine.Object
     {
         // This is simply to get the elapsed time for this phase of AssetLoading.
         float startTime = Time.realtimeSinceStartup;
@@ -197,7 +201,14 @@ public class AssetBundleLoader : MonoBehaviour
         if (request == null)
             yield break;
         _progressNotifier = progressNotifier;
-        _onFailed = onFailed;
+        AssetBundleManager.DownloadingErrors.ObserveAdd().Subscribe(errMsg =>
+        {
+            Debug.Log(errMsg.Value);
+            if (onFailed != null)
+            {
+                onFailed(errMsg.Value);
+            }
+        });
         _isDownloading = true;
         yield return StartCoroutine(request);
         _isDownloading = false;
@@ -214,14 +225,14 @@ public class AssetBundleLoader : MonoBehaviour
         }
         
         // Get the asset.
-        GameObject prefab = request.GetAsset<GameObject>();
-        RemapShader(prefab);
+        var asset = request.GetAsset<T>();
+        RemapShader(asset);
 
         // Calculate and display the elapsed time.
         float elapsedTime = Time.realtimeSinceStartup - startTime;
-        Debug.Log(assetName + (prefab == null ? " was not" : " was") + " loaded successfully in " + elapsedTime + " seconds");
+        Debug.Log(assetName + (asset == null ? " was not" : " was") + " loaded successfully in " + elapsedTime + " seconds");
 
-        onSuccess(prefab);
+        onSuccess(asset);
     }
 
     /// <summary>

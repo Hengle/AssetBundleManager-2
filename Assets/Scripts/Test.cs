@@ -27,13 +27,15 @@ public class Test : MonoBehaviour
         if (hasNewVersion)
         {
             loader.GetFileDownloadSize("spine" +
-                "", response => Debug.Log("文件大小："+response));
+                "",
+                Debug.LogError,
+                response => Debug.Log("文件大小："+response));
         }
         
     }
 
-	public void GetObjectFromAB () {
-        loader.GetAssetBundleObject("spine", "SpineTest", Progress, OnError, OnSuccess);
+	public void GetAssetBundleAsset() {
+        loader.GetAssetBundleAsset<GameObject>("spine", "SpineTest", Progress, OnError, OnSuccess);
 	}
 
     private void OnSuccess(Object prefab)

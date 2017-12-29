@@ -4,6 +4,7 @@ using UnityEditor;
 #endif
 using System.Collections;
 using System.Collections.Generic;
+using UniRx;
 
 /*
  	In this demo, we demonstrate:
@@ -53,7 +54,7 @@ namespace AssetBundles
 	
 		static Dictionary<string, LoadedAssetBundle> m_LoadedAssetBundles = new Dictionary<string, LoadedAssetBundle> ();
 		static Dictionary<string, WWW> m_DownloadingWWWs = new Dictionary<string, WWW> ();
-		static Dictionary<string, string> m_DownloadingErrors = new Dictionary<string, string> ();
+		static ReactiveDictionary<string, string> m_DownloadingErrors = new ReactiveDictionary<string, string> ();
 		static List<AssetBundleLoadOperation> m_InProgressOperations = new List<AssetBundleLoadOperation> ();
 		static Dictionary<string, string[]> m_Dependencies = new Dictionary<string, string[]> ();
 	
@@ -97,7 +98,7 @@ namespace AssetBundles
 	        get { return m_DownloadingWWWs; }
 	    }
 
-        public static Dictionary<string, string> DownloadingErrors
+        public static ReactiveDictionary<string, string> DownloadingErrors
         {
             get { return m_DownloadingErrors; }
         }
