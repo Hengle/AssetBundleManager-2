@@ -397,7 +397,7 @@ namespace AssetBundles
 	
 			if (--bundle.m_ReferencedCount == 0)
 			{
-				bundle.m_AssetBundle.Unload(false);
+				bundle.m_AssetBundle.Unload(true);
 				m_LoadedAssetBundles.Remove(assetBundleName);
 	
 				Log(LogType.Info, assetBundleName + " has been unloaded successfully");

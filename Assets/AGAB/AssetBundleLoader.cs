@@ -109,6 +109,7 @@ public class AssetBundleLoader : MonoBehaviour
     public float GetDownloadingProgress()
     {
         //所有下载项的综合下载进度
+        //todo 目前不是综合速度，因为manager管理的www会不断清理，所以计数会下降
         var downloads = AssetBundleManager.DownloadingWWWs;
         int downloadCount = downloads.Count;
         if (downloadCount == 0) return 1;
@@ -291,5 +292,10 @@ public class AssetBundleLoader : MonoBehaviour
                 _progressNotifier(GetDownloadingProgress());
             }
         }
+    }
+
+    public void UnloadAssetBundle(string bundleName)
+    {
+        AssetBundleManager.UnloadAssetBundle(bundleName);
     }
 }

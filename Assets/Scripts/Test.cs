@@ -8,7 +8,13 @@ public class Test : MonoBehaviour
 {
     public AssetBundleLoader loader;
     public Text LogText;
-    public SkeletonAnimation SpineComponent;
+    public GameObject SpineTestPrefab;
+
+    private GameObject _spineGo;
+
+    public string AssetBundleName, AssetName;
+
+    public GameObject SpineRef;
 
 	// Use this for initialization
 	void Awake ()
@@ -37,17 +43,27 @@ public class Test : MonoBehaviour
 
 	public void GetAssetBundleAsset() {
 
-       loader.GetAssetBundleAsset<SkeletonDataAsset>("spine", "S1_E_1_SkeletonData", Progress, OnError, OnSuccess);
+       loader.GetAssetBundleAsset<SkeletonDataAsset>(AssetBundleName, AssetName, Progress, OnError, OnSuccess);
 	}
 
     private void OnSuccess(SkeletonDataAsset asset)
     {
-        SpineComponent.skeletonDataAsset = asset;
-        //SpineComponent.skeletonDataAsset.Reset();
-        SpineComponent.Reset();
-        loader.RemapShader(SpineComponent.gameObject);
+        _spineGo = Instantiate(SpineTestPrefab);
+        var spineAnimation = _spineGo.GetComponent<SkeletonAnimation>();
+        spineAnimation.skeletonDataAsset = asset;
+        //需要reset并remap shader才能正确显示材质
+        spineAnimation.Reset();
+        loader.RemapShader(spineAnimation.gameObject);
     }
 
+    public void Clear()
+    {
+        Destroy(_spineGo);
+        _spineGo = null;
+        Resources.UnloadUnusedAssets();
+        loader.UnloadAssetBundle(AssetBundleName);
+    }
+    
     private void OnError(string msg)
     {
         Debug.LogError(msg);
@@ -56,5 +72,12 @@ public class Test : MonoBehaviour
     private void Progress(float progress)
     {
         Debug.Log(progress);
+    }
+
+    public void DeleteRef()
+    {
+        Destroy(SpineRef);
+        SpineRef = null;
+        Resources.UnloadUnusedAssets();
     }
 }

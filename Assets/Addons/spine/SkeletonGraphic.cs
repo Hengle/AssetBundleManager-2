@@ -491,7 +491,7 @@ public class SkeletonGraphic : Graphic
         Vector2[] uvs = this.uvs;
         Color32[] colors = this.colors;
         int vertexIndex = 0;
-        Color32 vertColor;
+        Color32 vertColor = new Color32();
         Color graphicColor = base.color;
         float a = skeleton.a * 255, r = skeleton.r, g = skeleton.g, b = skeleton.b;
 
