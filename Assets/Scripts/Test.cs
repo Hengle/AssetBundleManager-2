@@ -40,7 +40,7 @@ public class Test : MonoBehaviour
 
     private void OnSuccess(Object prefab)
     {
-        var go = Instantiate(prefab);
+        Instantiate(prefab);
     }
 
     private void OnError(string msg)
