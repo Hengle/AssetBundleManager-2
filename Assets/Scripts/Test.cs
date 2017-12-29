@@ -8,6 +8,7 @@ public class Test : MonoBehaviour
 {
     public AssetBundleLoader loader;
     public Text LogText;
+    public SkeletonAnimation SpineComponent;
 
 	// Use this for initialization
 	void Awake ()
@@ -35,12 +36,16 @@ public class Test : MonoBehaviour
     }
 
 	public void GetAssetBundleAsset() {
-        loader.GetAssetBundleAsset<GameObject>("spine", "SpineTest", Progress, OnError, OnSuccess);
+
+       loader.GetAssetBundleAsset<SkeletonDataAsset>("spine", "S1_E_1_SkeletonData", Progress, OnError, OnSuccess);
 	}
 
-    private void OnSuccess(Object prefab)
+    private void OnSuccess(SkeletonDataAsset asset)
     {
-        Instantiate(prefab);
+        SpineComponent.skeletonDataAsset = asset;
+        //SpineComponent.skeletonDataAsset.Reset();
+        SpineComponent.Reset();
+        loader.RemapShader(SpineComponent.gameObject);
     }
 
     private void OnError(string msg)

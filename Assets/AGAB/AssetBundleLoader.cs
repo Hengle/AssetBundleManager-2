@@ -197,7 +197,7 @@ public class AssetBundleLoader : MonoBehaviour
         float startTime = Time.realtimeSinceStartup;
 
         // Load asset from assetBundle.
-        AssetBundleLoadAssetOperation request = AssetBundleManager.LoadAssetAsync(assetBundleName, assetName, typeof(GameObject));
+        AssetBundleLoadAssetOperation request = AssetBundleManager.LoadAssetAsync(assetBundleName, assetName, typeof(T));
         if (request == null)
             yield break;
         _progressNotifier = progressNotifier;
@@ -230,6 +230,10 @@ public class AssetBundleLoader : MonoBehaviour
 
         // Calculate and display the elapsed time.
         float elapsedTime = Time.realtimeSinceStartup - startTime;
+        if (asset == null)
+        {
+            onFailed("获取Asset失败");
+        }
         Debug.Log(assetName + (asset == null ? " was not" : " was") + " loaded successfully in " + elapsedTime + " seconds");
 
         onSuccess(asset);
