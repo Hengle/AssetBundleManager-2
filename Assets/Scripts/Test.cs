@@ -14,15 +14,13 @@ public class Test : MonoBehaviour
 
     public string AssetBundleName, AssetName;
 
-    public GameObject SpineRef;
-
 	// Use this for initialization
 	void Awake ()
 	{
-	    Application.logMessageReceived += (condition, trace, type) =>
-	    {
-	        LogText.text = condition + "\n" + LogText.text;
-	    };
+        //Application.logMessageReceived += (condition, trace, type) =>
+        //{
+        //    LogText.text = condition + "\n" + LogText.text;
+        //};
 
         loader.Init((() => Debug.Log("AssetBundle Init Done")));
 	}
@@ -61,7 +59,6 @@ public class Test : MonoBehaviour
         Destroy(_spineGo);
         _spineGo = null;
         Resources.UnloadUnusedAssets();
-        loader.UnloadAssetBundle(AssetBundleName);
     }
     
     private void OnError(string msg)
@@ -74,10 +71,4 @@ public class Test : MonoBehaviour
         Debug.Log(progress);
     }
 
-    public void DeleteRef()
-    {
-        Destroy(SpineRef);
-        SpineRef = null;
-        Resources.UnloadUnusedAssets();
-    }
 }
