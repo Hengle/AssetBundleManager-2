@@ -489,9 +489,23 @@ namespace AssetBundles
 	
 			return operation;
 		}
-	
-		// Load level from the given assetBundle.
-		static public AssetBundleLoadOperation LoadLevelAsync (string assetBundleName, string levelName, bool isAdditive)
+
+        static public AssetBundleLoadBundleOperation LoadBundleAsync(string assetBundleName)
+        {
+            Log(LogType.Info, "Loading " + assetBundleName + " bundle");
+
+            AssetBundleLoadBundleOperation operation = null;
+            assetBundleName = RemapVariantName(assetBundleName);
+            LoadAssetBundle(assetBundleName);
+            operation = new AssetBundleLoadBundleOperation(assetBundleName);
+
+            m_InProgressOperations.Add(operation);
+
+            return operation;
+        }
+
+        // Load level from the given assetBundle.
+        static public AssetBundleLoadOperation LoadLevelAsync (string assetBundleName, string levelName, bool isAdditive)
 		{
 			Log(LogType.Info, "Loading " + levelName + " from " + assetBundleName + " bundle");
 	

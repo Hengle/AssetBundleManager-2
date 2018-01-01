@@ -25,27 +25,50 @@ public class Test : MonoBehaviour
         loader.Init((() => Debug.Log("AssetBundle Init Done")));
 	}
 
-    public void ChechNewVersion()
+#region 按钮方法
+
+    public void ChechABNewVersion()
     {
-        bool hasNewVersion = loader.IsBundleHaveNewVeresion("spine");
+        bool hasNewVersion = loader.IsBundleHaveNewVeresion(AssetBundleName);
         Debug.Log("新版本 : " + hasNewVersion);
         if (hasNewVersion)
         {
-            loader.GetFileDownloadSize("spine" +
-                "",
+            loader.GetFileDownloadSize(AssetBundleName,
                 Debug.LogError,
                 response => Debug.Log("文件大小："+response));
         }
         
     }
 
-	public void GetAssetBundleAsset() {
+    public void LoadAssetBundle()
+    {
+        loader.LoadAssetBundle(AssetBundleName, Progress, OnError, 
+            bundle => Debug.Log(bundle.m_AssetBundle.name + " Loaded"));
+    }
+
+    public void GetAssetFromLoadedBundle()
+    {
+        string error;
+        loader.GetAssetFromLoadedBundle<SkeletonDataAsset>(AssetBundleName, AssetName, out error, OnSuccess);
+    }
+
+    public void GetAssetBundleAsset() {
 
        loader.GetAssetBundleAsset<SkeletonDataAsset>(AssetBundleName, AssetName, Progress, OnError, OnSuccess);
 	}
 
+    public void Clear()
+    {
+        Destroy(_spineGo);
+        _spineGo = null;
+        Resources.UnloadUnusedAssets();
+    }
+
+#endregion
+
     private void OnSuccess(SkeletonDataAsset asset)
     {
+        Debug.Log("获取到Asset");
         _spineGo = Instantiate(SpineTestPrefab);
         var spineAnimation = _spineGo.GetComponent<SkeletonAnimation>();
         spineAnimation.skeletonDataAsset = asset;
@@ -54,13 +77,6 @@ public class Test : MonoBehaviour
         loader.RemapShader(spineAnimation.gameObject);
     }
 
-    public void Clear()
-    {
-        Destroy(_spineGo);
-        _spineGo = null;
-        Resources.UnloadUnusedAssets();
-    }
-    
     private void OnError(string msg)
     {
         Debug.LogError(msg);

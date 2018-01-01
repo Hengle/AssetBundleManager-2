@@ -23,12 +23,6 @@ public class AssetBundleLoader : MonoBehaviour
     private Action<float> _progressNotifier;
     private bool _isDownloading = false;
 
-    public void GetAssetBundleAsset<T>(string assetBundleName, string assetName,
-        Action<float> progressNotifier, Action<string> onFailed, Action<T> onSuccess) where T : UnityEngine.Object
-    {
-        StartCoroutine(GetAsset(assetBundleName, assetName, progressNotifier, onFailed, onSuccess));
-    }
-
     /// <summary>
     /// 指定asset bundle是否已有更新的版本，注意如果所依赖的包有更新，也会反馈true
     /// </summary>
@@ -89,7 +83,7 @@ public class AssetBundleLoader : MonoBehaviour
         StartCoroutine(GetFileAndDependenciesSize(assetBundleName, onFailed, onSuccess));
     }
 
-    private IEnumerator GetFileAndDependenciesSize(string assetBundleName, Action<string> onFailed , Action<int> onSuccess)
+    private IEnumerator GetFileAndDependenciesSize(string assetBundleName, Action<string> onFailed, Action<int> onSuccess)
     {
         int fileSize = 0;
         yield return StartCoroutine(GetFileSize(assetBundleName, onFailed, txtSize => fileSize += int.Parse(txtSize)));
@@ -101,7 +95,7 @@ public class AssetBundleLoader : MonoBehaviour
         }
         onSuccess(fileSize);
     }
-    
+
     /// <summary>
     /// 获取当前下载进度，0-1
     /// </summary>
@@ -123,7 +117,7 @@ public class AssetBundleLoader : MonoBehaviour
     }
 
     private IEnumerator GetFileSize(string assetBundleName, Action<string> onError, Action<string> onSuccess)
-    {   
+    {
         string address = AssetBundleManager.BaseDownloadingURL + assetBundleName;
         UnityWebRequest www = UnityWebRequest.Get(address);
         yield return www.Send();
@@ -150,7 +144,77 @@ public class AssetBundleLoader : MonoBehaviour
         StartCoroutine(Initialize(callback));
     }
 
-    // Use this for initialization
+
+    #region 将获取bundle与获取asset分步骤操作的方式
+
+    public void LoadAssetBundle(string assetBundleName,
+        Action<float> progressNotifier, Action<string> onFailed, Action<LoadedAssetBundle> onSuccess)
+    {
+        StartCoroutine(LoadAssetBundleAsync(assetBundleName, progressNotifier, onFailed, onSuccess));
+    }
+
+    public void GetAssetFromLoadedBundle<T>(string assetBundleName, string assetName,
+        out string error, Action<T> onSuccess)
+        where T : UnityEngine.Object
+    {
+        var bundle = AssetBundleManager.GetLoadedAssetBundle(assetBundleName, out error);
+        GetAssetFromLoadedBundle<T>(bundle, assetName, onSuccess);
+    }
+
+    public void GetAssetFromLoadedBundle<T>(LoadedAssetBundle bundle, string assetName,
+        Action<T> onSuccess)
+        where T: UnityEngine.Object
+    {
+        var request = bundle.m_AssetBundle.LoadAssetAsync(assetName, typeof(T));
+        request.ObserveEveryValueChanged((bundleRequest => bundleRequest.isDone)).Subscribe((isDone =>
+        {
+            if (isDone)
+            {
+                T asset = request.asset as T;
+                RemapShader(asset);
+                onSuccess(asset);
+            }
+        }));
+    }
+
+    protected IEnumerator LoadAssetBundleAsync(string assetBundleName,
+    Action<float> progressNotifier, Action<string> onFailed, Action<LoadedAssetBundle> onSuccess)
+    {
+        // Load asset from assetBundle.
+        AssetBundleLoadBundleOperation request = AssetBundleManager.LoadBundleAsync(assetBundleName);
+        if (request == null)
+            yield break;
+        _progressNotifier = progressNotifier;
+        AssetBundleManager.DownloadingErrors.ObserveAdd().Subscribe(errMsg =>
+        {
+            Debug.Log(errMsg.Value);
+            if (onFailed != null)
+            {
+                onFailed(errMsg.Value);
+            }
+        });
+        _isDownloading = true;
+        yield return StartCoroutine(request);
+        _isDownloading = false;
+
+        var bundle = request.GetLoadedBundle();
+        if (bundle == null)
+        {
+            onFailed("获取Bundle失败");
+        }
+        onSuccess(bundle);
+    }
+
+    #endregion
+
+#region 按照manager的思路，自动连续进行bundle和asset获取的方式
+
+    public void GetAssetBundleAsset<T>(string assetBundleName, string assetName,
+        Action<float> progressNotifier, Action<string> onFailed, Action<T> onSuccess) where T : UnityEngine.Object
+    {
+        StartCoroutine(GetAsset(assetBundleName, assetName, progressNotifier, onFailed, onSuccess));
+    }
+
     private IEnumerator GetAsset<T>(string assetBundleName, string assetName,
         Action<float> progressNotifier, Action<string> onFailed, Action<T> onSuccess) where T : UnityEngine.Object
     {
@@ -217,14 +281,14 @@ public class AssetBundleLoader : MonoBehaviour
         if (request is AssetBundleLoadAssetOperationFull)
         {
             //Full表示是正式环境下进行的加载，在这种情况下，如果有出错，要把错误输出提交出去
-            var requestFull = (AssetBundleLoadAssetOperationFull) request;
+            var requestFull = (AssetBundleLoadAssetOperationFull)request;
             if (!string.IsNullOrEmpty(requestFull.DownloadingError) && onFailed != null)
             {
                 onFailed(requestFull.DownloadingError);
                 yield break;
             }
         }
-        
+
         // Get the asset.
         var asset = request.GetAsset<T>();
         RemapShader(asset);
@@ -239,6 +303,8 @@ public class AssetBundleLoader : MonoBehaviour
 
         onSuccess(asset);
     }
+
+    #endregion
 
     /// <summary>
     /// 因为有时候从ab得到的材质会丢shader，所以在从ab里拿出任何asset后都进行一下所包含材质的shader重新链接
