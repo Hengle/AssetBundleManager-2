@@ -13,10 +13,6 @@ public class AssetBundleLoader : MonoBehaviour
     /// 是否使用本地服务器debug
     /// </summary>
     public bool IsLocalServerDebug;
-    /// <summary>
-    /// 是使用远程服务器下载AB，还是使用本地包内AB
-    /// </summary>
-    public bool IsFromRemoteServer;
 
     public string Base_Address = "http://124.254.60.82:10005/AssetBundles/Samples/";
 
@@ -139,14 +135,54 @@ public class AssetBundleLoader : MonoBehaviour
     /// 所有操作都要在Init得到返回之后
     /// </summary>
     /// <param name="callback"></param>
-    public void Init(Action callback)
+    public void Init(Action callback, bool isFromRemoteServer = true)
     {
-        StartCoroutine(Initialize(callback));
+        StartCoroutine(Initialize(isFromRemoteServer, callback));
     }
 
 
     #region 将获取bundle与获取asset分步骤操作的方式
 
+    /// <summary>
+    /// 缓存本地预存的ab包，注意由于当前使用的项目PX里并没有清理的需求，目前缓存的同时也留在内存中
+    /// </summary>
+    /// <param name="bundleNames"></param>
+    /// <param name="onFailed"></param>
+    /// <param name="onSuccess"></param>
+    /// <param name="progressNotifier"></param>
+    public void CacheLocalAssetBundles(string[] bundleNames, Action<float> progressNotifier,
+        Action<string> onFailed, Action onSuccess)
+    {
+        //重新初始化为本地，拉取后再初始化回来
+        Init((() =>
+        {
+            //拉取本地AB包
+            int p = 0;
+            IterateCacheLocalBundle(bundleNames, p, progressNotifier, onFailed, () =>
+            {
+                //重新恢复远程设置
+                Init(onSuccess);
+            });
+        }), false);
+    }
+
+    private void IterateCacheLocalBundle(string[] bundleNames, int p, Action<float> progressNotifier,
+        Action<string> onFailed, Action onSuccess)
+    {
+        LoadAssetBundle(bundleNames[p], progressNotifier, onFailed, bundle =>
+        {
+            p++;
+            if (p < bundleNames.Length)
+            {
+                IterateCacheLocalBundle(bundleNames, p, progressNotifier, onFailed, onSuccess);
+            }
+            else
+            {
+                onSuccess();
+            }
+        });
+    }
+    
     public void LoadAssetBundle(string assetBundleName,
         Action<float> progressNotifier, Action<string> onFailed, Action<LoadedAssetBundle> onSuccess)
     {
@@ -223,7 +259,7 @@ public class AssetBundleLoader : MonoBehaviour
     }
 
     // Initialize the downloading url and AssetBundleManifest object.
-    protected IEnumerator Initialize(Action callback)
+    protected IEnumerator Initialize(bool isFromRemoteServer, Action callback)
     {
         // Don't destroy this gameObject as we depend on it to run the loading script.
         DontDestroyOnLoad(gameObject);
@@ -234,13 +270,19 @@ public class AssetBundleLoader : MonoBehaviour
         }
         else
         {
-            if (IsFromRemoteServer)
+            if (isFromRemoteServer)
             {
                 AssetBundleManager.SetSourceAssetBundleURL(Base_Address);
             }
             else
             {
-                AssetBundleManager.SetSourceAssetBundleURL(Application.dataPath + "/");
+                #if UNITY_EDITOR || UNITY_STANDALONE                
+                AssetBundleManager.SetSourceAssetBundleURL(Application.dataPath + "/StreamingAssets/");
+                #elif UNITY_ANDROID
+                AssetBundleManager.SetSourceAssetBundleURL("jar:file://" + Application.dataPath + "!/assets/");
+                #elif UNITY_IOS
+                AssetBundleManager.SetSourceAssetBundleURL(Application.dataPath + "/Raw/");
+                #endif
             }
         }
 

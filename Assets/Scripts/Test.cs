@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using AssetBundles;
+using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -44,6 +45,14 @@ public class Test : MonoBehaviour
     {
         loader.LoadAssetBundle(AssetBundleName, Progress, OnError, 
             bundle => Debug.Log(bundle.m_AssetBundle.name + " Loaded"));
+    }
+
+    public void LoadAssetBundleLocal()
+    {
+        loader.CacheLocalAssetBundles(new[]{AssetBundleName}, Progress, OnError, () =>
+        {
+            Debug.Log("完成");
+        } );
     }
 
     public void GetAssetFromLoadedBundle()
