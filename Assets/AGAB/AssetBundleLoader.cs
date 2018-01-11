@@ -277,7 +277,7 @@ public class AssetBundleLoader : MonoBehaviour
             else
             {
                 #if UNITY_EDITOR || UNITY_STANDALONE                
-                AssetBundleManager.SetSourceAssetBundleURL(Application.dataPath + "/StreamingAssets/");
+                AssetBundleManager.SetSourceAssetBundleURL("file://"+Application.dataPath + "/StreamingAssets/");
                 #elif UNITY_ANDROID
                 AssetBundleManager.SetSourceAssetBundleURL("jar:file://" + Application.dataPath + "!/assets/");
                 #elif UNITY_IOS
